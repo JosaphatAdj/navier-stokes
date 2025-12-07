@@ -2,6 +2,17 @@ import numpy as np
 
 
 def solve(f,a: float, b: float, h: float,k: float,conditions_lim: list):
+    """
+    Résoud l'équation de Poisson sur un domaine rectangulaire avec des conditions aux limites de Dirichlet
+    :param f: fonction f(x,y)
+    :param a: longueur du domaine
+    :param b: largeur du domaine
+    :param h: pas du maillage sur l'axe des x
+    :param k: pas du maillage sur l'axe des y
+    :param conditions_lim: conditions aux limites (valeurs sur le bord du domaine . On fournit la valeur de chaque point du bord dans une liste par sens anti-horaire))
+    :return: matrice de la solution de l'équation de Poisson (valeurs sur le bord du domaine sont égales à celles fournies dans conditions_lim) avec les valeurs sur l'axe ox (y=0) dans la derniere ligne de result et les valeurs sur l'axe oy (x=0) dans la premiere colonne de result cad maillage===result)
+    """
+
     if a==0 or b==0 or h==0 or k==0:
         return None
 
@@ -14,15 +25,21 @@ def solve(f,a: float, b: float, h: float,k: float,conditions_lim: list):
     if not (n.is_integer() or n.is_integer()):
         return None
 
-    A=_get_matrix(f,n,m,h,k)
-    b=_get_b(f,a,b,dim,conditions_lim)
-    
-    return None
+    A=_get_matrix(n,m,h,k)
+    b=_get_b(f,n,m,h,k,conditions_lim)
+    x=np.linalg.solve(A,b)
+    result=np.zeros((m,n))
+    result[1:-1,1:-1]=x.reshape(m-2,n-2)
+    result[0,:]=conditions_lim[n+m:2*n+m]
+    result[-1,:]=conditions_lim[:n]
+    result[:,0]=conditions_lim[2*n+m:]
+    result[:,-1]=conditions_lim[n,n+m]
+    return result
 
 
 def _get_matrix(n,m,h,k):
     taille=(n-2)*(m-2)
-    A=np.zeros((taille,taille))
+    A=np.zeros((int(taille),int(taille)))
     line=0
     for i in range(2,m):
         for j in range(2,n):
@@ -83,5 +100,7 @@ def _get_b(f,n,m,h,k,conditions_lim):
 
 
 
-#print(_get_matrix(5,5,1,1))
-print(_get_b(lambda x,y:x**2,5,5,1,1,[1]*16))
+if __name__ == "__main__":
+    #print(_get_b(lambda x,y:x**2,5,5,1,1,[1]*16))
+    #print(_get_matrix(5,5,1,1))
+    print(solve(lambda x,y:x**2,5,5,1,1,[1]*16))
