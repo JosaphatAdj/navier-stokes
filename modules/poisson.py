@@ -5,35 +5,39 @@ def solve(f,a: float, b: float, h: float,k: float,conditions_lim: list):
     """
     Résoud l'équation de Poisson sur un domaine rectangulaire avec des conditions aux limites de Dirichlet
     :param f: fonction f(x,y)
-    :param a: longueur du domaine
-    :param b: largeur du domaine
+    :param a: longueur sur l'axe des x du domaine
+    :param b: largeur sur l'axe des y du domaine
     :param h: pas du maillage sur l'axe des x
     :param k: pas du maillage sur l'axe des y
-    :param conditions_lim: conditions aux limites (valeurs sur le bord du domaine . On fournit la valeur de chaque point du bord dans une liste par sens anti-horaire))
-    :return: matrice de la solution de l'équation de Poisson (valeurs sur le bord du domaine sont égales à celles fournies dans conditions_lim) avec les valeurs sur l'axe ox (y=0) dans la derniere ligne de result et les valeurs sur l'axe oy (x=0) dans la premiere colonne de result cad maillage===result)
+    :param conditions_lim: conditions aux limites (valeurs sur le bord du domaine . On fournit la valeur de chaque point du bord dans une liste dans le sens anti-horaire))
+    :return: matrice de la solution de l'équation de Poisson (valeurs sur le bord du domaine sont égales à celles fournies dans conditions_lim) avec les valeurs sur l'axe ox (y=0) dans la premiere ligne de result et les valeurs sur l'axe oy (x=0) dans la premiere ligne de result cad maillage===result)
     """
 
     if a==0 or b==0 or h==0 or k==0:
-        return None
-
-    if not conditions_lim:
-        return None
+        return "Erreur: a, b, h, k doivent être positifs"
 
     n,m=1+a/h,1+b/k
     dim=(n-2)*(m-2)
 
-    if not (n.is_integer() or n.is_integer()):
-        return None
+    if not (int(n)==n or int(m)==m):
+        return "Erreur: a/h, b/k doivent être des entiers"
+
+    if not conditions_lim or len(conditions_lim)!=2*(n+m)-4:
+        return "Erreur: conditions_lim doit être une liste de longueur 2*(n+m)-4"
+
+    n,m=int(n),int(m)
 
     A=_get_matrix(n,m,h,k)
     b=_get_b(f,n,m,h,k,conditions_lim)
     x=np.linalg.solve(A,b)
     result=np.zeros((m,n))
-    result[1:-1,1:-1]=x.reshape(m-2,n-2)
-    result[0,:]=conditions_lim[n+m:2*n+m]
-    result[-1,:]=conditions_lim[:n]
-    result[:,0]=conditions_lim[2*n+m:]
-    result[:,-1]=conditions_lim[n,n+m]
+    x_reshaped=x.reshape(m-2,n-2)
+    x_reshaped=x_reshaped[::-1,:]
+    result[1:-1,1:-1]=x_reshaped
+    result[0,:]=conditions_lim[n+m-2:2*n+m-2] # les valeurs sur l'axe x=m
+    result[-1,:]=conditions_lim[:n] # les valeurs sur l'axe ox (y=0)
+    result[:-1,0]=conditions_lim[2*n+m-3:] # les valeurs sur l'axe oy (x=0)
+    result[:,-1]=conditions_lim[n-1:n+m-1] # les valeurs sur l'axe x=n
     return result
 
 
@@ -103,4 +107,4 @@ def _get_b(f,n,m,h,k,conditions_lim):
 if __name__ == "__main__":
     #print(_get_b(lambda x,y:x**2,5,5,1,1,[1]*16))
     #print(_get_matrix(5,5,1,1))
-    print(solve(lambda x,y:x**2,5,5,1,1,[1]*16))
+    print(solve(lambda x,y:x**2,5,5,1,1,[1]*20))
